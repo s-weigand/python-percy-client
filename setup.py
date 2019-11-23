@@ -28,6 +28,11 @@ setup(
     license='MIT',
     zip_safe=False,
     keywords='percy',
+    project_urls={
+        "Documentation": "https://percy.io/docs/clients/python/selenium",
+        "Source": "https://github.com/percy/python-percy-client",
+        "Tracker": "https://github.com/percy/python-percy-client/issues",
+    },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
