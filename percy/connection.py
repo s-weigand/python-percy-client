@@ -4,6 +4,7 @@ from requests.packages.urllib3.util.retry import Retry
 from percy.user_agent import UserAgent
 from percy import utils
 
+
 class Connection(object):
     def __init__(self, config, environment):
         self.config = config
@@ -44,7 +45,9 @@ class Connection(object):
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            utils.print_error('Received a {} error requesting: {}'.format(response.status_code, path))
+            utils.print_error(
+                'Received a {} error requesting: {}'.format(response.status_code, path)
+            )
             utils.print_error(response.content)
             raise e
         return response.json()
@@ -59,7 +62,9 @@ class Connection(object):
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            utils.print_error('Received a {} error posting to: {}.'.format(response.status_code, path))
+            utils.print_error(
+                'Received a {} error posting to: {}.'.format(response.status_code, path)
+            )
             utils.print_error(response.content)
             raise e
         return response.json()

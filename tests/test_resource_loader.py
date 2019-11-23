@@ -5,6 +5,7 @@ from percy.resource_loader import ResourceLoader
 
 TEST_FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'testdata')
 
+
 class FakeWebdriver(object):
     page_source = 'foo'
     current_url = '/'

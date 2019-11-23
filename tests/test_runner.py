@@ -1,10 +1,8 @@
 import json
 import os
-import sys
 import unittest
 
 import percy
-import pytest
 import requests_mock
 from percy import errors
 from percy import utils
@@ -22,10 +20,7 @@ SIMPLE_BUILD_FIXTURE = {
     'data': {
         'id': '123',
         'type': 'builds',
-        'relationships': {
-            'self': '/api/v1/builds/123',
-            'missing-resources': {},
-        },
+        'relationships': {'self': '/api/v1/builds/123', 'missing-resources': {}},
     },
 }
 
@@ -33,12 +28,10 @@ SIMPLE_SNAPSHOT_FIXTURE = {
     'data': {
         'id': '256',
         'type': 'snapshots',
-        'relationships': {
-            'self': '/api/v1/snapshots/256',
-            'missing-resources': {},
-        },
+        'relationships': {'self': '/api/v1/snapshots/256', 'missing-resources': {}},
     },
 }
+
 
 class TestRunner(unittest.TestCase):
     def test_init(self):
@@ -50,7 +43,7 @@ class TestRunner(unittest.TestCase):
     @requests_mock.Mocker()
     def test_safe_initialize_when_disabled(self, mock):
         runner = percy.Runner()
-        assert runner._is_enabled == False
+        assert not runner._is_enabled
         runner.initialize_build()
 
     @requests_mock.Mocker()
@@ -83,20 +76,20 @@ class TestRunner(unittest.TestCase):
                     'self': "/api/v1/snapshots/123",
                     'missing-resources': {
                         'data': [
-                            {
-                                'type': 'resources',
-                                'id': loader.build_resources[0].sha,
-                            },
+                            {'type': 'resources', 'id': loader.build_resources[0].sha}
                         ],
                     },
                 },
             },
         }
         mock.post('https://percy.io/api/v1/builds/', text=json.dumps(build_fixture))
-        mock.post('https://percy.io/api/v1/builds/123/resources/', text='{"success": true}')
+        mock.post(
+            'https://percy.io/api/v1/builds/123/resources/', text='{"success": true}'
+        )
         runner.initialize_build()
 
-        # Make sure the missing resources were uploaded. The mock above will not fail if not called.
+        # Make sure the missing resources were uploaded.
+        # The mock above will not fail if not called.
         with open(loader.build_resources[0].local_path, 'r') as f:
             content = f.read()
         assert len(content) > 0
@@ -104,22 +97,22 @@ class TestRunner(unittest.TestCase):
             'data': {
                 'type': 'resources',
                 'id': loader.build_resources[0].sha,
-                'attributes': {
-                    'base64-content': utils.base64encode(content)
-                },
+                'attributes': {'base64-content': utils.base64encode(content)},
             },
         }
 
     def test_safe_snapshot_when_disabled(self):
         runner = percy.Runner()
-        assert runner._is_enabled == False
+        assert not runner._is_enabled
         runner.snapshot()
 
     @requests_mock.Mocker()
     def test_snapshot(self, mock):
         root_dir = os.path.join(TEST_FILES_DIR, 'static')
         webdriver = FakeWebdriver()
-        loader = percy.ResourceLoader(root_dir=root_dir, base_url='/assets/', webdriver=webdriver)
+        loader = percy.ResourceLoader(
+            root_dir=root_dir, base_url='/assets/', webdriver=webdriver
+        )
         config = percy.Config(access_token='foo')
         runner = percy.Runner(config=config, loader=loader)
 
@@ -130,30 +123,38 @@ class TestRunner(unittest.TestCase):
         # Plain snapshot without a missing resource.
         response_text = json.dumps(SIMPLE_SNAPSHOT_FIXTURE)
         mock.post('https://percy.io/api/v1/builds/123/snapshots/', text=response_text)
-        mock.post('https://percy.io/api/v1/snapshots/256/finalize', text='{"success": true}')
+        mock.post(
+            'https://percy.io/api/v1/snapshots/256/finalize', text='{"success": true}'
+        )
         runner.snapshot()
 
         # Snapshot with a missing resource.
-        response_text = json.dumps({
-            'data': {
-                'id': '256',
-                'type': 'snapshots',
-                'relationships': {
-                    'self': '/api/v1/snapshots/256',
-                    'missing-resources': {
-                        'data': [
-                            {
-                                'type': 'resources',
-                                'id': loader.snapshot_resources[0].sha,
-                            },
-                        ],
+        response_text = json.dumps(
+            {
+                'data': {
+                    'id': '256',
+                    'type': 'snapshots',
+                    'relationships': {
+                        'self': '/api/v1/snapshots/256',
+                        'missing-resources': {
+                            'data': [
+                                {
+                                    'type': 'resources',
+                                    'id': loader.snapshot_resources[0].sha,
+                                },
+                            ],
+                        },
                     },
                 },
-            },
-        })
+            }
+        )
         mock.post('https://percy.io/api/v1/builds/123/snapshots/', text=response_text)
-        mock.post('https://percy.io/api/v1/builds/123/resources/', text='{"success": true}')
-        mock.post('https://percy.io/api/v1/snapshots/256/finalize', text='{"success": true}')
+        mock.post(
+            'https://percy.io/api/v1/builds/123/resources/', text='{"success": true}'
+        )
+        mock.post(
+            'https://percy.io/api/v1/snapshots/256/finalize', text='{"success": true}'
+        )
         runner.snapshot(name='foo', enable_javascript=True, widths=[1280])
 
         # Assert that kwargs are passed through correctly to create_snapshot.
@@ -179,20 +180,24 @@ class TestRunner(unittest.TestCase):
         config = percy.Config(access_token='foo')
         runner = percy.Runner(config=config)
 
-        self.assertRaises(errors.UninitializedBuildError, lambda: runner.finalize_build())
+        self.assertRaises(
+            errors.UninitializedBuildError, lambda: runner.finalize_build()
+        )
 
         response_text = json.dumps(SIMPLE_BUILD_FIXTURE)
         mock.post('https://percy.io/api/v1/builds/', text=response_text)
         runner.initialize_build()
 
-        mock.post('https://percy.io/api/v1/builds/123/finalize', text='{"success": true}')
+        mock.post(
+            'https://percy.io/api/v1/builds/123/finalize', text='{"success": true}'
+        )
         runner.finalize_build()
         assert mock.request_history[1].json() == {}
 
         # Whitebox check that the current build data is reset.
-        assert runner._current_build == None
+        assert runner._current_build is None
 
     def test_safe_finalize_when_disabled(self):
         runner = percy.Runner()
-        assert runner._is_enabled == False
+        assert not runner._is_enabled
         runner.finalize_build()

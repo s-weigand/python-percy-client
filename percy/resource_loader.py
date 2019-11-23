@@ -1,5 +1,6 @@
 import os
 import percy
+
 try:
     # Python 3's pathname2url
     from urllib.request import pathname2url
@@ -16,7 +17,7 @@ except ImportError:
 
 __all__ = ['ResourceLoader']
 
-MAX_FILESIZE_BYTES = 15 * 1024**2  # 15 MiB.
+MAX_FILESIZE_BYTES = 15 * 1024 ** 2  # 15 MiB.
 
 
 class BaseResourceLoader(object):
@@ -53,8 +54,7 @@ class ResourceLoader(BaseResourceLoader):
 
                     path_for_url = pathname2url(path.replace(self.root_dir, '', 1))
                     if self.base_url[-1] == '/' and path_for_url[0] == '/':
-                        path_for_url = path_for_url.replace('/', '' , 1)
-
+                        path_for_url = path_for_url.replace('/', '', 1)
 
                     resource_url = "{0}{1}".format(self.base_url, path_for_url)
                     resource = percy.Resource(

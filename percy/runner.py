@@ -9,7 +9,6 @@ __all__ = ['Runner']
 
 
 class Runner(object):
-
     def __init__(self, loader=None, config=None, client=None):
         self.loader = loader
         self.config = config or percy.Config()
@@ -24,7 +23,9 @@ class Runner(object):
                 self.client.config.access_token
             except errors.AuthError:
                 if self.client.environment.current_ci:
-                    utils.print_error('[percy] Warning: Percy is disabled, no PERCY_TOKEN set.')
+                    utils.print_error(
+                        '[percy] Warning: Percy is disabled, no PERCY_TOKEN set.'
+                    )
                 self._is_enabled = False
 
     def initialize_build(self, **kwargs):
@@ -38,9 +39,13 @@ class Runner(object):
         for build_resource in build_resources:
             sha_to_build_resource[build_resource.sha] = build_resource
 
-        self._current_build = self.client.create_build(resources=build_resources, **kwargs)
+        self._current_build = self.client.create_build(
+            resources=build_resources, **kwargs
+        )
 
-        missing_resources = self._current_build['data']['relationships']['missing-resources']
+        missing_resources = self._current_build['data']['relationships'][
+            'missing-resources'
+        ]
         missing_resources = missing_resources.get('data', [])
 
         for missing_resource in missing_resources:
@@ -62,18 +67,22 @@ class Runner(object):
 
     @property
     def build_id(self):
-      if not self._is_enabled:
-        return
-      if not self._current_build:
-        raise errors.UninitializedBuildError('Cannot get current build id before build is initialized')
-      return self._current_build['data']['id']
+        if not self._is_enabled:
+            return
+        if not self._current_build:
+            raise errors.UninitializedBuildError(
+                'Cannot get current build id before build is initialized'
+            )
+        return self._current_build['data']['id']
 
     def snapshot(self, **kwargs):
         # Silently pass if Percy is disabled.
         if not self._is_enabled:
             return
         if not self._current_build:
-            raise errors.UninitializedBuildError('Cannot call snapshot before build is initialized')
+            raise errors.UninitializedBuildError(
+                'Cannot call snapshot before build is initialized'
+            )
 
         root_resource = self.loader.snapshot_resources[0]
         build_id = self._current_build['data']['id']
@@ -94,6 +103,7 @@ class Runner(object):
             return
         if not self._current_build:
             raise errors.UninitializedBuildError(
-                'Cannot finalize_build before build is initialized.')
+                'Cannot finalize_build before build is initialized.'
+            )
         self.client.finalize_build(self._current_build['data']['id'])
         self._current_build = None

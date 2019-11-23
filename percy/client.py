@@ -9,11 +9,12 @@ __all__ = ['Client']
 
 
 class Client(object):
-
     def __init__(self, connection=None, config=None, environment=None):
         self._environment = environment if environment else Environment()
         self._config = config if config else Config()
-        self._connection = connection if connection else Connection(self._config, self._environment)
+        self._connection = (
+            connection if connection else Connection(self._config, self._environment)
+        )
 
     @property
     def connection(self):
@@ -29,19 +30,22 @@ class Client(object):
 
     def create_build(self, **kwargs):
         branch = kwargs.get('branch') or self.environment.branch
-        pull_request_number = kwargs.get('pull_request_number') \
-            or self.environment.pull_request_number
+        pull_request_number = (
+            kwargs.get('pull_request_number') or self.environment.pull_request_number
+        )
         resources = kwargs.get('resources')
         parallel_nonce = kwargs.get('parallel_nonce') or self.environment.parallel_nonce
-        parallel_total_shards = kwargs.get('parallel_total_shards') \
+        parallel_total_shards = (
+            kwargs.get('parallel_total_shards')
             or self.environment.parallel_total_shards
+        )
 
         # Only pass parallelism data if it all exists.
         if not parallel_nonce or not parallel_total_shards:
             parallel_nonce = None
             parallel_total_shards = None
 
-        commit_data = kwargs.get('commit_data') or self.environment.commit_data;
+        commit_data = kwargs.get('commit_data') or self.environment.commit_data
 
         data = {
             'data': {
@@ -60,15 +64,13 @@ class Client(object):
                     'pull-request-number': pull_request_number,
                     'parallel-nonce': parallel_nonce,
                     'parallel-total-shards': parallel_total_shards,
-                }
+                },
             }
         }
 
         if resources:
             data['data']['relationships'] = {
-                'resources': {
-                    'data': [r.serialize() for r in resources],
-                }
+                'resources': {'data': [r.serialize() for r in resources]}
             }
 
         path = "{base_url}/builds/".format(base_url=self.config.api_url)
@@ -77,16 +79,13 @@ class Client(object):
 
     def finalize_build(self, build_id):
         path = "{base_url}/builds/{build_id}/finalize".format(
-            base_url=self.config.api_url,
-            build_id=build_id,
+            base_url=self.config.api_url, build_id=build_id,
         )
         return self._connection.post(path=path, data={})
 
     def create_snapshot(self, build_id, resources, **kwargs):
         if not resources or len(resources) <= 0:
-            raise ValueError(
-                'resources should be an array of Percy.Resource objects'
-            )
+            raise ValueError('resources should be an array of Percy.Resource objects')
         widths = kwargs.get('widths', self.config.default_widths)
         data = {
             'data': {
@@ -97,22 +96,18 @@ class Client(object):
                     'widths': widths,
                 },
                 'relationships': {
-                    'resources': {
-                        'data': [r.serialize() for r in resources],
-                    }
-                }
+                    'resources': {'data': [r.serialize() for r in resources]}
+                },
             }
         }
         path = "{base_url}/builds/{build_id}/snapshots/".format(
-            base_url=self.config.api_url,
-            build_id=build_id
+            base_url=self.config.api_url, build_id=build_id
         )
         return self._connection.post(path=path, data=data)
 
     def finalize_snapshot(self, snapshot_id):
         path = "{base_url}/snapshots/{snapshot_id}/finalize".format(
-            base_url=self.config.api_url,
-            snapshot_id=snapshot_id
+            base_url=self.config.api_url, snapshot_id=snapshot_id
         )
         return self._connection.post(path=path, data={})
 
@@ -122,14 +117,10 @@ class Client(object):
             'data': {
                 'type': 'resources',
                 'id': sha,
-                'attributes': {
-                    'base64-content': utils.base64encode(content),
-                }
-
+                'attributes': {'base64-content': utils.base64encode(content)},
             }
         }
         path = "{base_url}/builds/{build_id}/resources/".format(
-            base_url=self.config.api_url,
-            build_id=build_id
+            base_url=self.config.api_url, build_id=build_id
         )
         return self._connection.post(path=path, data=data)

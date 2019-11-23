@@ -5,7 +5,6 @@ __all__ = ['Config']
 
 
 class Config(object):
-
     def __init__(self, api_url=None, default_widths=None, access_token=None):
         self._api_url = os.getenv('PERCY_API', api_url or 'https://percy.io/api/v1')
         self._default_widths = default_widths or []

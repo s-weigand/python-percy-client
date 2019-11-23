@@ -1,4 +1,3 @@
-import os
 import requests
 import requests_mock
 import unittest
@@ -34,16 +33,16 @@ class TestPercyConnection(unittest.TestCase):
     @requests_mock.Mocker()
     def test_get_error(self, mock):
         mock.get('http://api.percy.io', text='{"error":"foo"}', status_code=401)
-        self.assertRaises(requests.exceptions.HTTPError, lambda: self.percy_connection.get(
-            'http://api.percy.io'
-        ))
+        self.assertRaises(
+            requests.exceptions.HTTPError,
+            lambda: self.percy_connection.get('http://api.percy.io'),
+        )
 
     @requests_mock.Mocker()
     def test_post(self, mock):
         mock.post('http://api.percy.io', text='{"data":"POST Percy"}')
         data = self.percy_connection.post(
-            'http://api.percy.io',
-            data='{"data": "data"}'
+            'http://api.percy.io', data='{"data": "data"}'
         )
         self.assertEqual(data['data'], 'POST Percy')
 
@@ -53,7 +52,9 @@ class TestPercyConnection(unittest.TestCase):
     @requests_mock.Mocker()
     def test_post_error(self, mock):
         mock.post('http://api.percy.io', text='{"error":"foo"}', status_code=500)
-        self.assertRaises(requests.exceptions.HTTPError, lambda: self.percy_connection.post(
-            'http://api.percy.io',
-            data='{"data": "data"}'
-        ))
+        self.assertRaises(
+            requests.exceptions.HTTPError,
+            lambda: self.percy_connection.post(
+                'http://api.percy.io', data='{"data": "data"}'
+            ),
+        )

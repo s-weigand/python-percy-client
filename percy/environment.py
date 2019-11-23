@@ -2,21 +2,24 @@ import os
 import re
 import subprocess
 
-from percy import errors
+
 from percy import utils
 
 __all__ = ['Environment']
 
-GIT_COMMIT_FORMAT = '%n'.join([
-  'COMMIT_SHA:%H',
-  'AUTHOR_NAME:%an',
-  'AUTHOR_EMAIL:%ae',
-  'COMMITTER_NAME:%cn',
-  'COMMITTER_EMAIL:%ce',
-  'COMMITTED_DATE:%ai',
-  # Note: order is important, this must come last because the regex is a multiline match.
-  'COMMIT_MESSAGE:%B',
-]); # git show format uses %n for newlines.
+GIT_COMMIT_FORMAT = '%n'.join(
+    [
+        'COMMIT_SHA:%H',
+        'AUTHOR_NAME:%an',
+        'AUTHOR_EMAIL:%ae',
+        'COMMITTER_NAME:%cn',
+        'COMMITTER_EMAIL:%ce',
+        'COMMITTED_DATE:%ai',
+        # Note: order is important, this must come last because the regex is a multiline match.
+        'COMMIT_MESSAGE:%B',
+    ]
+)
+# git show format uses %n for newlines.
 
 
 class Environment(object):
@@ -95,17 +98,20 @@ class Environment(object):
             'branch': self.branch,
             # An optional but important attribute:
             'sha': self.commit_sha or parse(re.compile("COMMIT_SHA:(.*)")),
-
             # Optional attributes:
             # If we have the git information, read from those rather than env vars.
             # The GIT_ environment vars are from the Jenkins Git Plugin, but could be
             # used generically. This behavior may change in the future.
             'message': parse(re.compile("COMMIT_MESSAGE:(.*)", flags=re.MULTILINE)),
             'committed_at': parse(re.compile("COMMITTED_DATE:(.*)")),
-            'author_name': parse(re.compile("AUTHOR_NAME:(.*)")) or os.getenv('GIT_AUTHOR_NAME'),
-            'author_email': parse(re.compile("AUTHOR_EMAIL:(.*)")) or os.getenv('GIT_AUTHOR_EMAIL'),
-            'committer_name': parse(re.compile("COMMITTER_NAME:(.*)")) or os.getenv('GIT_COMMITTER_NAME'),
-            'committer_email': parse(re.compile("COMMITTER_EMAIL:(.*)")) or os.getenv('GIT_COMMITTER_EMAIL'),
+            'author_name': parse(re.compile("AUTHOR_NAME:(.*)"))
+            or os.getenv('GIT_AUTHOR_NAME'),
+            'author_email': parse(re.compile("AUTHOR_EMAIL:(.*)"))
+            or os.getenv('GIT_AUTHOR_EMAIL'),
+            'committer_name': parse(re.compile("COMMITTER_NAME:(.*)"))
+            or os.getenv('GIT_COMMITTER_NAME'),
+            'committer_email': parse(re.compile("COMMITTER_EMAIL:(.*)"))
+            or os.getenv('GIT_COMMITTER_EMAIL'),
         }
 
     @property
@@ -126,7 +132,7 @@ class Environment(object):
     @property
     def parallel_nonce(self):
         if os.getenv('PERCY_PARALLEL_NONCE'):
-          return os.getenv('PERCY_PARALLEL_NONCE')
+            return os.getenv('PERCY_PARALLEL_NONCE')
         if self._real_env and hasattr(self._real_env, 'parallel_nonce'):
             return self._real_env.parallel_nonce
 
@@ -139,10 +145,7 @@ class Environment(object):
 
     def _raw_git_output(self, args):
         process = subprocess.Popen(
-            ['git'] + args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=False
+            ['git'] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False
         )
         return process.stdout.read().strip().decode('utf-8')
 
@@ -151,18 +154,18 @@ class Environment(object):
         if not commit_sha or len(commit_sha) > 100 or not commit_sha.isalnum():
             return ''
 
-        args = ['show', commit_sha, '--quiet', '--format="' + GIT_COMMIT_FORMAT + '"'];
+        args = ['show', commit_sha, '--quiet', '--format="' + GIT_COMMIT_FORMAT + '"']
         return self._raw_git_output(args)
 
     def _git_commit_output(self):
         raw_git_output = ''
         # Try getting commit data from commit_sha set by environment variables
         if self.commit_sha:
-          raw_git_output = self._raw_commit_output(self.commit_sha)
+            raw_git_output = self._raw_commit_output(self.commit_sha)
 
         # If there's no raw_git_output, it probably means there's not a sha, so try `HEAD`
         if not raw_git_output:
-          raw_git_output = self._raw_commit_output('HEAD')
+            raw_git_output = self._raw_commit_output('HEAD')
 
         return raw_git_output
 
@@ -171,9 +174,9 @@ class Environment(object):
 
     def _get_origin_url(self):
         process = subprocess.Popen(
-            'git config --get remote.origin.url', stdout=subprocess.PIPE, shell=True)
+            'git config --get remote.origin.url', stdout=subprocess.PIPE, shell=True
+        )
         return process.stdout.read().strip().decode('utf-8')
-
 
 
 class TravisEnvironment(object):
@@ -239,7 +242,7 @@ class CircleEnvironment(object):
     def pull_request_number(self):
         pr_url = os.getenv('CI_PULL_REQUEST')
         if pr_url:
-          return os.getenv('CI_PULL_REQUEST').split('/')[-1]
+            return os.getenv('CI_PULL_REQUEST').split('/')[-1]
 
     @property
     def branch(self):
@@ -251,7 +254,9 @@ class CircleEnvironment(object):
 
     @property
     def parallel_nonce(self):
-        return os.getenv('CIRCLE_WORKFLOW_WORKSPACE_ID') or os.getenv('CIRCLE_BUILD_NUM')
+        return os.getenv('CIRCLE_WORKFLOW_WORKSPACE_ID') or os.getenv(
+            'CIRCLE_BUILD_NUM'
+        )
 
     @property
     def parallel_total_shards(self):
@@ -269,7 +274,7 @@ class CodeshipEnvironment(object):
         pr_num = os.getenv('CI_PULL_REQUEST')
         # Unfortunately, codeship seems to always returns 'false', so let this be null.
         if pr_num != 'false':
-          return pr_num
+            return pr_num
 
     @property
     def branch(self):
@@ -328,7 +333,7 @@ class SemaphoreEnvironment(object):
     def parallel_nonce(self):
         return '%s/%s' % (
             os.getenv('SEMAPHORE_BRANCH_ID'),
-            os.getenv('SEMAPHORE_BUILD_NUMBER')
+            os.getenv('SEMAPHORE_BUILD_NUMBER'),
         )
 
     @property
@@ -386,7 +391,4 @@ class GitlabEnvironment(object):
 
     @property
     def parallel_nonce(self):
-        return '%s/%s' % (
-            os.getenv('CI_COMMIT_REF_NAME'),
-            os.getenv('CI_JOB_ID')
-        )
+        return '%s/%s' % (os.getenv('CI_COMMIT_REF_NAME'), os.getenv('CI_JOB_ID'))

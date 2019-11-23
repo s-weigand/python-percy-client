@@ -3,15 +3,22 @@ import percy
 import pytest
 import sys
 
+
 class BaseTestPercyEnvironment(object):
     def setup_method(self, method):
         self.original_env = {}
         self.original_env['TRAVIS_BUILD_ID'] = os.getenv('TRAVIS_BUILD_ID', None)
-        self.original_env['TRAVIS_BUILD_NUMBER'] = os.getenv('TRAVIS_BUILD_NUMBER', None)
+        self.original_env['TRAVIS_BUILD_NUMBER'] = os.getenv(
+            'TRAVIS_BUILD_NUMBER', None
+        )
         self.original_env['TRAVIS_COMMIT'] = os.getenv('TRAVIS_COMMIT', None)
         self.original_env['TRAVIS_BRANCH'] = os.getenv('TRAVIS_BRANCH', None)
-        self.original_env['TRAVIS_PULL_REQUEST'] = os.getenv('TRAVIS_PULL_REQUEST', None)
-        self.original_env['TRAVIS_PULL_REQUEST_BRANCH'] = os.getenv('TRAVIS_PULL_REQUEST_BRANCH', None)
+        self.original_env['TRAVIS_PULL_REQUEST'] = os.getenv(
+            'TRAVIS_PULL_REQUEST', None
+        )
+        self.original_env['TRAVIS_PULL_REQUEST_BRANCH'] = os.getenv(
+            'TRAVIS_PULL_REQUEST_BRANCH', None
+        )
 
     def teardown_method(self, method):
         self.clear_env_vars()
@@ -31,7 +38,6 @@ class BaseTestPercyEnvironment(object):
             'PERCY_PULL_REQUEST',
             'PERCY_PARALLEL_NONCE',
             'PERCY_PARALLEL_TOTAL',
-
             # Unset Travis vars.
             'TRAVIS_BUILD_ID',
             'TRAVIS_BUILD_NUMBER',
@@ -40,7 +46,6 @@ class BaseTestPercyEnvironment(object):
             'TRAVIS_PULL_REQUEST',
             'TRAVIS_PULL_REQUEST_BRANCH',
             'CI_NODE_TOTAL',
-
             # Unset Jenkins vars.
             'JENKINS_URL',
             'BUILD_NUMBER',
@@ -48,7 +53,6 @@ class BaseTestPercyEnvironment(object):
             'ghprbActualCommit',
             'ghprbSourceBranch',
             'GIT_COMMIT',
-
             # Unset Circle CI vars.
             'CIRCLECI',
             'CIRCLE_SHA1',
@@ -57,7 +61,6 @@ class BaseTestPercyEnvironment(object):
             'CIRCLE_WORKFLOW_WORKSPACE_ID',
             'CI_PULL_REQUESTS',
             'CIRCLE_NODE_TOTAL',
-
             # Unset Codeship vars.
             'CI_NAME',
             'CI_BRANCH',
@@ -66,14 +69,12 @@ class BaseTestPercyEnvironment(object):
             'CI_BUILD_NUMBER',
             'CI_BUILD_ID',
             'CI_NODE_TOTAL',
-
             # Unset Drone vars.
             'CI',
             'DRONE',
             'DRONE_COMMIT',
             'DRONE_BRANCH',
             'CI_PULL_REQUEST',
-
             # Unset Semaphore CI vars
             'CI',
             'SEMAPHORE',
@@ -84,7 +85,6 @@ class BaseTestPercyEnvironment(object):
             'SEMAPHORE_CURRENT_THREAD',
             'SEMAPHORE_THREAD_COUNT',
             'PULL_REQUEST_NUMBER',
-
             # Unset Buildkite vars
             'BUILDKITE',
             'BUILDKITE_COMMIT',
@@ -92,8 +92,6 @@ class BaseTestPercyEnvironment(object):
             'BUILDKITE_PULL_REQUEST',
             'BUILDKITE_BUILD_ID',
             'BUILDKITE_PARALLEL_JOB_COUNT',
-
-
             # Unset GitLab vars
             'GITLAB_CI',
             'CI_COMMIT_SHA',
@@ -112,29 +110,29 @@ class TestNoEnvironment(BaseTestPercyEnvironment):
         self.environment = percy.Environment()
 
     def test_current_ci(self):
-        assert self.environment.current_ci == None
+        assert self.environment.current_ci is None
 
     def test_target_branch(self):
-        assert self.environment.target_branch == None
+        assert self.environment.target_branch is None
         # Can be overridden with PERCY_TARGET_BRANCH.
         os.environ['PERCY_TARGET_BRANCH'] = 'staging'
         assert self.environment.target_branch == 'staging'
 
     def test_target_commit_sha(self):
-        assert self.environment.target_commit_sha == None
+        assert self.environment.target_commit_sha is None
         # Can be overridden with PERCY_TARGET_COMMIT.
         os.environ['PERCY_TARGET_COMMIT'] = 'test-target-commit'
         assert self.environment.target_commit_sha == 'test-target-commit'
 
     def test_pull_request_number(self):
-        assert self.environment.pull_request_number == None
+        assert self.environment.pull_request_number is None
         # Can be overridden with PERCY_PULL_REQUEST.
         os.environ['PERCY_PULL_REQUEST'] = '1234'
         assert self.environment.pull_request_number == '1234'
 
     def test_commit_live(self, monkeypatch):
         def isstr(s):
-            if sys.version_info >= (3,0):
+            if sys.version_info >= (3, 0):
                 return isinstance(s, str)
             else:
                 return isinstance(s, basestring)
@@ -173,6 +171,7 @@ class TestNoEnvironment(BaseTestPercyEnvironment):
         # Call commit with _raw_commit_data returning mock data, so we can confirm it
         # gets formatted correctly
         os.environ['PERCY_BRANCH'] = 'the-coolest-branch'
+
         def fake_raw_commit(commit_sha):
             return """COMMIT_SHA:2fcd1b107aa25e62a06de7782d0c17544c669d139
                       AUTHOR_NAME:Tim Haines
@@ -191,9 +190,8 @@ class TestNoEnvironment(BaseTestPercyEnvironment):
             'author_name': 'Tim Haines',
             'author_email': 'timhaines@example.com',
             'committer_name': 'Other Tim Haines',
-            'committer_email': 'othertimhaines@example.com'
+            'committer_email': 'othertimhaines@example.com',
         }
-
 
     @pytest.fixture()
     def test_branch(self, monkeypatch):
@@ -202,7 +200,7 @@ class TestNoEnvironment(BaseTestPercyEnvironment):
 
         # If git command fails, falls back to None and prints warning.
         monkeypatch.setattr(self.environment, '_raw_branch_output', lambda: '')
-        assert self.environment.branch == None
+        assert self.environment.branch is None
 
         # Can be overridden with PERCY_BRANCH.
         os.environ['PERCY_BRANCH'] = 'foo'
@@ -239,12 +237,13 @@ class TestTravisEnvironment(BaseTestPercyEnvironment):
         assert self.environment.current_ci == 'travis'
 
     def test_pull_request_number(self):
-        assert self.environment.pull_request_number == None
+        assert self.environment.pull_request_number is None
 
         os.environ['TRAVIS_PULL_REQUEST'] = '256'
         assert self.environment.pull_request_number == '256'
 
-        # PERCY env vars should take precendence over CI. Checked here once, assume other envs work.
+        # PERCY env vars should take precendence over CI.
+        # Checked here once, assume other envs work.
         os.environ['PERCY_PULL_REQUEST'] = '1234'
         assert self.environment.pull_request_number == '1234'
 
@@ -275,7 +274,7 @@ class TestTravisEnvironment(BaseTestPercyEnvironment):
         assert self.environment.parallel_total_shards == 3
 
         os.environ['CI_NODE_TOTAL'] = ''
-        assert self.environment.parallel_total_shards == None
+        assert self.environment.parallel_total_shards is None
 
         os.environ['PERCY_PARALLEL_TOTAL'] = '1'
         assert self.environment.parallel_total_shards == 1
@@ -295,7 +294,7 @@ class TestJenkinsEnvironment(BaseTestPercyEnvironment):
         assert self.environment.current_ci == 'jenkins'
 
     def test_pull_request_number(self):
-        assert self.environment.pull_request_number == None
+        assert self.environment.pull_request_number is None
 
         os.environ['ghprbPullId'] = '256'
         assert self.environment.pull_request_number == '256'
@@ -352,7 +351,9 @@ class TestCodeshipEnvironment(BaseTestPercyEnvironment):
         os.environ['CI_BRANCH'] = 'codeship-branch'
         os.environ['CI_BUILD_NUMBER'] = 'codeship-build-number'
         os.environ['CI_BUILD_ID'] = 'codeship-build-id'
-        os.environ['CI_PULL_REQUEST'] = 'false'  # This is always false on Codeship, unfortunately.
+        os.environ[
+            'CI_PULL_REQUEST'
+        ] = 'false'  # This is always false on Codeship, unfortunately.
         os.environ['CI_COMMIT_ID'] = 'codeship-commit-sha'
         os.environ['CI_NODE_TOTAL'] = '3'
         self.environment = percy.Environment()
